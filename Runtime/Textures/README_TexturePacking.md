@@ -44,11 +44,35 @@ B = Paint Fade
 A = Rain Streak / Reserved
 ```
 
+中文约定：
+
+```text
+R = 灰尘 / 积灰
+G = 苔痕 / 潮湿
+B = 彩绘褪色
+A = 雨痕 / 预留
+```
+
 旧化混合顺序：
 
 ```text
-BaseColor -> Detail -> Dirt -> Moss -> PaintFade -> RainStreak -> Lighting
+BaseColor -> EdgeWear -> Dirt -> Moss -> PaintFade -> RainStreak -> Lighting
 ```
+
+注意：边缘磨损来自 MaskMap.B，不来自 WeatherMap。
+
+## VertexColor
+
+顶点色只用于旧化局部加成，不用于材质类型分支。
+
+```text
+R = 灰尘 / 彩绘褪色加成
+G = 苔痕加成
+B = 边缘磨损加成
+A = 预留
+```
+
+材质上的 `顶点色旧化加成` 默认为 0，需要主动调高才会生效。
 
 ## DetailMap
 
