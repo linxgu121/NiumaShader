@@ -20,6 +20,7 @@ namespace NiumaShader.Editor
         private const string TestScenePath = TestScenesFolder + "/NiumaShader_Architecture_Test.unity";
         private const string MaskTexturePath = TestTexturesFolder + "/T_Niuma_Validation_Mask.png";
         private const string WeatherTexturePath = TestTexturesFolder + "/T_Niuma_Validation_Weather.png";
+        private const int ValidationTextureSize = 256;
 
         [MenuItem("Niuma/Shader/生成古建 Shader 测试场景")]
         public static void CreateValidationScene()
@@ -170,6 +171,7 @@ namespace NiumaShader.Editor
             SetColor(material, "_EdgeWearColor", edgeWearColor);
             SetFloat(material, "_EdgeWearStrength", edgeWearStrength);
             SetFloat(material, "_VertexWeatherStrength", 0.35f);
+            material.enableInstancing = true;
             material.EnableKeyword("_NIUMA_WEATHERING");
             EditorUtility.SetDirty(material);
             return material;
@@ -178,18 +180,19 @@ namespace NiumaShader.Editor
         private static Texture2D CreateOrLoadMaskTexture()
         {
             var existing = AssetDatabase.LoadAssetAtPath<Texture2D>(MaskTexturePath);
-            if (existing != null)
+            if (existing != null && existing.width == ValidationTextureSize && existing.height == ValidationTextureSize)
             {
                 return existing;
             }
 
-            var texture = new Texture2D(64, 64, TextureFormat.RGBA32, false, true);
+            var texture = new Texture2D(ValidationTextureSize, ValidationTextureSize, TextureFormat.RGBA32, false, true);
+            var maxIndex = ValidationTextureSize - 1f;
             for (var y = 0; y < texture.height; y++)
             {
                 for (var x = 0; x < texture.width; x++)
                 {
-                    var u = x / 63f;
-                    var v = y / 63f;
+                    var u = x / maxIndex;
+                    var v = y / maxIndex;
                     var border = Mathf.Max(Mathf.Abs(u - 0.5f), Mathf.Abs(v - 0.5f));
                     var ao = Mathf.Lerp(0.65f, 1f, v);
                     var smoothness = Mathf.Lerp(0.18f, 0.72f, u);
@@ -206,18 +209,19 @@ namespace NiumaShader.Editor
         private static Texture2D CreateOrLoadWeatherTexture()
         {
             var existing = AssetDatabase.LoadAssetAtPath<Texture2D>(WeatherTexturePath);
-            if (existing != null)
+            if (existing != null && existing.width == ValidationTextureSize && existing.height == ValidationTextureSize)
             {
                 return existing;
             }
 
-            var texture = new Texture2D(64, 64, TextureFormat.RGBA32, false, true);
+            var texture = new Texture2D(ValidationTextureSize, ValidationTextureSize, TextureFormat.RGBA32, false, true);
+            var maxIndex = ValidationTextureSize - 1f;
             for (var y = 0; y < texture.height; y++)
             {
                 for (var x = 0; x < texture.width; x++)
                 {
-                    var u = x / 63f;
-                    var v = y / 63f;
+                    var u = x / maxIndex;
+                    var v = y / maxIndex;
                     var dirt = Mathf.SmoothStep(0.35f, 0f, v);
                     var moss = Mathf.SmoothStep(0.55f, 0f, v) * Mathf.SmoothStep(1f, 0.35f, u);
                     var paintFade = Mathf.Clamp01(Mathf.Sin((u + v) * 12f) * 0.25f + 0.45f);
@@ -242,6 +246,7 @@ namespace NiumaShader.Editor
                 importer.textureType = TextureImporterType.Default;
                 importer.sRGBTexture = sRgb;
                 importer.mipmapEnabled = true;
+                importer.textureCompression = TextureImporterCompression.Uncompressed;
                 importer.SaveAndReimport();
             }
         }

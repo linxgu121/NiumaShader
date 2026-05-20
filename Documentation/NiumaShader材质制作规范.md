@@ -4,7 +4,7 @@
 
 ## 当前阶段
 
-当前已进入第五阶段，验证内容包括：
+当前已进入第六阶段，验证内容包括：
 
 - `Niuma/Architecture/Lit` 能在 URP 下正常显示
 - `BaseMap × BaseColor` 输出正确
@@ -22,10 +22,13 @@
 - ShaderGUI 能显示中文分组和 MaskMap 警告
 - Editor 菜单可生成古建 Shader 验证场景
 - Editor 菜单可生成 / 刷新木、瓦、石、墙四套模板材质
-- Editor 菜单可生成线性 MaskMap / WeatherMap 测试贴图
+- Editor 菜单可生成 256×256 线性 MaskMap / WeatherMap 测试贴图
+- 模板材质默认开启 GPU Instancing，方便重复瓦片、斗拱、栏杆等构件直接复用
+- Editor 菜单可执行性能冻结检查，确认 Pass、CBUFFER、Instancing、DOTS、Variant 预算和 Additional Lights 策略没有被破坏
+- Editor 菜单可生成 Instancing 压力测试场景，用于验证重复瓦片等构件的批处理预留
 - `.meta` 文件由 Unity 自动生成
 
-第五阶段暂不包含：
+第六阶段暂不包含：
 
 - DetailMap
 - Additional Lights
@@ -38,6 +41,8 @@ Unity 导入脚本后，顶部菜单会出现：
 ```text
 Niuma/Shader/生成古建 Shader 测试场景
 Niuma/Shader/刷新古建 Shader 模板材质
+Niuma/Shader/执行性能冻结检查
+Niuma/Shader/生成 Instancing 压力测试场景
 ```
 
 生成内容：
@@ -55,9 +60,12 @@ Assets/Game/Moudle/NiumaShader/Runtime/Textures/Test
 
 Assets/Game/Moudle/NiumaShader/Runtime/TestScenes
   NiumaShader_Architecture_Test.unity
+  NiumaShader_Instancing_Test.unity
 ```
 
 这些 `.mat`、`.png`、`.unity` 和 `.meta` 文件都由 Unity 编辑器生成，不手写。
+
+测试贴图尺寸为 256×256，并关闭压缩，避免近距离观察旧化渐变时把贴图像素块或压缩噪点误判为 Shader 问题。
 
 建议验证顺序：
 
@@ -65,6 +73,32 @@ Assets/Game/Moudle/NiumaShader/Runtime/TestScenes
 2. 确认 Console 没有 Shader 或 C# 编译错误
 3. 依次切换材质的调试视图：Final、BaseColor、Normal、AO、Smoothness、EdgeWear、Dirt、Moss、PaintFade、Rain、VertexColor
 4. 开启场景 Lighting / Shadows，确认 ShadowCaster、DepthOnly、DepthNormals 没有粉材质或异常黑块
+5. 点击 `Niuma/Shader/执行性能冻结检查`，确认 Console 中没有 Error
+6. 点击 `Niuma/Shader/生成 Instancing 压力测试场景`，打开生成的场景检查 10×10 青瓦重复件是否正常显示
+
+## 性能冻结检查
+
+第六阶段新增 `NiumaArchitecturePerformanceValidator`，用于把容易被后续修改破坏的性能约束固定下来。
+
+检查内容：
+
+```text
+Shader.Find("Niuma/Architecture/Lit") 是否可用
+UnityPerMaterial 是否只在 NiumaArchitectureMaterial.hlsl 中定义
+ForwardLit / ShadowCaster / DepthOnly / DepthNormals 是否完整
+每个 Pass 是否保留 multi_compile_instancing
+每个 Pass 是否保留 DOTS include 预留
+是否误开启 _ADDITIONAL_LIGHTS / _ADDITIONAL_LIGHT_SHADOWS pragma
+shader_feature_local 理论 Variant 是否控制在 32 个以内
+四套模板材质是否存在、Shader 是否正确、是否开启 GPU Instancing
+```
+
+使用规则：
+
+- 修改 `.shader` 或 `.hlsl` 后，必须执行一次 `Niuma/Shader/执行性能冻结检查`
+- 如果检查出现 Error，优先修复 Shader 结构，不要先调材质参数
+- Warning 可以进入下一步验证，但需要在提交说明中写明原因
+- `NiumaShader_Instancing_Test.unity` 只用于性能与批处理预留验证，不作为正式场景资产
 
 ## 渲染 Pass
 
