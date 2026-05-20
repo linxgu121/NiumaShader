@@ -71,6 +71,67 @@ Shader "Niuma/Architecture/Lit"
             #include "NiumaArchitectureInput.hlsl"
             ENDHLSL
         }
+
+        Pass
+        {
+            Name "ShadowCaster"
+            Tags { "LightMode" = "ShadowCaster" }
+
+            Cull Back
+            ZWrite On
+            ZTest LEqual
+            ColorMask 0
+
+            HLSLPROGRAM
+            #pragma target 3.5
+            #pragma vertex NiumaArchitectureShadowVertex
+            #pragma fragment NiumaArchitectureShadowFragment
+            #pragma multi_compile_vertex _ _CASTING_PUNCTUAL_LIGHT_SHADOW
+            #pragma multi_compile_instancing
+            #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DOTS.hlsl"
+            #include "NiumaArchitectureShadowCaster.hlsl"
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Name "DepthOnly"
+            Tags { "LightMode" = "DepthOnly" }
+
+            Cull Back
+            ZWrite On
+            ZTest LEqual
+            ColorMask R
+
+            HLSLPROGRAM
+            #pragma target 3.5
+            #pragma vertex NiumaArchitectureDepthOnlyVertex
+            #pragma fragment NiumaArchitectureDepthOnlyFragment
+            #pragma multi_compile_instancing
+            #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DOTS.hlsl"
+            #include "NiumaArchitectureDepthOnly.hlsl"
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Name "DepthNormals"
+            Tags { "LightMode" = "DepthNormals" }
+
+            Cull Back
+            ZWrite On
+            ZTest LEqual
+
+            HLSLPROGRAM
+            #pragma target 3.5
+            #pragma vertex NiumaArchitectureDepthNormalsVertex
+            #pragma fragment NiumaArchitectureDepthNormalsFragment
+            #pragma shader_feature_local _NIUMA_NORMALMAP
+            #pragma multi_compile_instancing
+            #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DOTS.hlsl"
+            #include "NiumaArchitectureDepthNormals.hlsl"
+            ENDHLSL
+        }
     }
 
     Fallback "Universal Render Pipeline/Simple Lit"

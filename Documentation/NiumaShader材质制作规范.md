@@ -4,7 +4,7 @@
 
 ## 当前阶段
 
-当前已进入第三阶段，验证内容包括：
+当前已进入第五阶段，验证内容包括：
 
 - `Niuma/Architecture/Lit` 能在 URP 下正常显示
 - `BaseMap × BaseColor` 输出正确
@@ -14,15 +14,70 @@
 - WeatherMap 的灰尘、苔痕、彩绘褪色、雨痕接入
 - MaskMap.B 的边缘磨损接入
 - 顶点色旧化加成接入
+- ShadowCaster Pass 接入
+- DepthOnly Pass 接入
+- DepthNormals Pass 接入
+- 所有 Pass 共用 `NiumaArchitectureMaterial.hlsl` 中的 UnityPerMaterial 布局
 - ShaderGUI 能显示法线、MaskMap、旧化和调试视图分组
 - ShaderGUI 能显示中文分组和 MaskMap 警告
+- Editor 菜单可生成古建 Shader 验证场景
+- Editor 菜单可生成 / 刷新木、瓦、石、墙四套模板材质
+- Editor 菜单可生成线性 MaskMap / WeatherMap 测试贴图
 - `.meta` 文件由 Unity 自动生成
 
-第三阶段暂不包含：
+第五阶段暂不包含：
 
 - DetailMap
 - Additional Lights
-- ShadowCaster / DepthOnly / DepthNormals 独立 Pass
+- 自定义 RenderFeature / RenderGraph Pass
+
+## 美术验证工具
+
+Unity 导入脚本后，顶部菜单会出现：
+
+```text
+Niuma/Shader/生成古建 Shader 测试场景
+Niuma/Shader/刷新古建 Shader 模板材质
+```
+
+生成内容：
+
+```text
+Assets/Game/Moudle/NiumaShader/Runtime/Materials
+  M_Wood_Painted_Template.mat
+  M_RoofTile_BlueGray_Template.mat
+  M_Stone_Step_Template.mat
+  M_Wall_Lime_Template.mat
+
+Assets/Game/Moudle/NiumaShader/Runtime/Textures/Test
+  T_Niuma_Validation_Mask.png
+  T_Niuma_Validation_Weather.png
+
+Assets/Game/Moudle/NiumaShader/Runtime/TestScenes
+  NiumaShader_Architecture_Test.unity
+```
+
+这些 `.mat`、`.png`、`.unity` 和 `.meta` 文件都由 Unity 编辑器生成，不手写。
+
+建议验证顺序：
+
+1. 点击 `Niuma/Shader/生成古建 Shader 测试场景`
+2. 确认 Console 没有 Shader 或 C# 编译错误
+3. 依次切换材质的调试视图：Final、BaseColor、Normal、AO、Smoothness、EdgeWear、Dirt、Moss、PaintFade、Rain、VertexColor
+4. 开启场景 Lighting / Shadows，确认 ShadowCaster、DepthOnly、DepthNormals 没有粉材质或异常黑块
+
+## 渲染 Pass
+
+当前 Shader 包含：
+
+```text
+UniversalForward  正式渲染，负责基础光照、法线、MaskMap、WeatherMap
+ShadowCaster      阴影贴图写入，使用 URP Shadow Bias
+DepthOnly         深度预写入，服务深度纹理、遮挡和后处理
+DepthNormals      法线写入，服务 SSAO 和法线相关效果
+```
+
+`DepthNormals` 会在 `_NIUMA_NORMALMAP` 开启时采样 Tangent Space NormalMap。这样 SSAO 等依赖法线的效果与 ForwardLit 中的法线方向保持一致。
 
 ## 旧化贴图规则
 

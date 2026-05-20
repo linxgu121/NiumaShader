@@ -3,39 +3,7 @@
 
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 #include "NiumaArchitectureLighting.hlsl"
-
-// Niuma 建筑材质参数必须统一放在 UnityPerMaterial 中，保证 SRP Batcher 友好。
-CBUFFER_START(UnityPerMaterial)
-    float4 _BaseMap_ST;
-    float4 _WeatherMap_ST;
-    half4 _BaseColor;
-    half _SurfaceType;
-    half _NormalScale;
-    half _OcclusionStrength;
-    half _Smoothness;
-    half4 _DirtColor;
-    half4 _MossColor;
-    half4 _EdgeWearColor;
-    half _WeatherStrength;
-    half _DirtStrength;
-    half _MossStrength;
-    half _PaintAgeStrength;
-    half _PaintFadeSaturation;
-    half _RainStreakStrength;
-    half _EdgeWearStrength;
-    half _VertexWeatherStrength;
-    half _DebugView;
-CBUFFER_END
-
-TEXTURE2D(_BaseMap);
-SAMPLER(sampler_BaseMap);
-TEXTURE2D(_NormalMap);
-SAMPLER(sampler_NormalMap);
-TEXTURE2D(_MaskMap);
-SAMPLER(sampler_MaskMap);
-TEXTURE2D(_WeatherMap);
-SAMPLER(sampler_WeatherMap);
-
+#include "NiumaArchitectureMaterial.hlsl"
 #include "NiumaArchitectureWeathering.hlsl"
 #include "NiumaArchitectureDebug.hlsl"
 
