@@ -9,7 +9,7 @@ using UnityEngine.SceneManagement;
 namespace NiumaShader.Editor
 {
     /// <summary>
-    /// 第六阶段性能冻结检查工具。
+    /// 2.0 性能冻结检查工具。
     /// 用于在团队修改 Shader 后快速确认变体数量、批处理预留和 Pass 完整性没有被破坏。
     /// </summary>
     public static class NiumaArchitecturePerformanceValidator
@@ -22,7 +22,8 @@ namespace NiumaShader.Editor
         private const string MaterialsFolder = ModuleRoot + "/Runtime/Materials";
         private const string TestScenesFolder = ModuleRoot + "/Runtime/TestScenes";
         private const string InstancingScenePath = TestScenesFolder + "/NiumaShader_Instancing_Test.unity";
-        private const int MaxLocalShaderFeatureCount = 4;
+        private const int MaxLocalShaderFeatureCount = 5;
+        private const int MaxShaderVariantBudget = 64;
         private const int ExpectedRenderPassCount = 4;
 
         [MenuItem("Niuma/Shader/执行性能冻结检查")]
@@ -250,13 +251,13 @@ namespace NiumaShader.Editor
             var variantBudget = 1 << keywords.Count;
             variantBudget *= 2; // Instancing 维度。
 
-            if (keywords.Count > MaxLocalShaderFeatureCount || variantBudget > 32)
+            if (keywords.Count > MaxLocalShaderFeatureCount || variantBudget > MaxShaderVariantBudget)
             {
                 report.Error("Shader Variant 超出预算。Local Keyword 数：" + keywords.Count + "，理论 Variant：" + variantBudget);
                 return;
             }
 
-            report.Pass("Shader Variant 预算通过。Local Keyword 数：" + keywords.Count + "，理论 Variant：" + variantBudget + " / 32");
+            report.Pass("Shader Variant 预算通过。Local Keyword 数：" + keywords.Count + "，理论 Variant：" + variantBudget + " / " + MaxShaderVariantBudget);
         }
 
         private static void CheckTemplateMaterials(PerformanceReport report)

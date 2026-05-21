@@ -4,6 +4,7 @@
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 #include "NiumaArchitectureLighting.hlsl"
 #include "NiumaArchitectureMaterial.hlsl"
+#include "NiumaArchitectureDetail.hlsl"
 #include "NiumaArchitectureWeathering.hlsl"
 #include "NiumaArchitectureDebug.hlsl"
 
@@ -84,11 +85,15 @@ NiumaArchitectureSurfaceData NiumaBuildSurfaceData(Varyings input, half3 normalW
     surface.normalWS = normalWS;
     surface.occlusion = lerp(1.0, saturate(maskSample.r), saturate(_OcclusionStrength));
     surface.smoothness = saturate(maskSample.g * _Smoothness);
+    surface.detailMask = 0.0;
     surface.edgeWear = saturate(maskSample.b);
     surface.dirtMask = 0.0;
     surface.mossMask = 0.0;
     surface.paintFadeMask = 0.0;
     surface.rainMask = 0.0;
+
+    float2 detailUV = input.uv * _DetailMap_ST.xy + _DetailMap_ST.zw;
+    NiumaApplyArchitectureDetail(surface, detailUV);
 
     float2 weatherUV = input.uv * _WeatherMap_ST.xy + _WeatherMap_ST.zw;
     NiumaApplyArchitectureWeathering(surface, weatherUV, input.color);

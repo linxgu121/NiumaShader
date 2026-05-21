@@ -4,10 +4,12 @@
 // 所有 Pass 共享同一份材质常量布局，避免 Forward / Shadow / Depth Pass 的参数声明漂移。
 CBUFFER_START(UnityPerMaterial)
     float4 _BaseMap_ST;
+    float4 _DetailMap_ST;
     float4 _WeatherMap_ST;
     half4 _BaseColor;
     half _SurfaceType;
     half _NormalScale;
+    half _DetailStrength;
     half _OcclusionStrength;
     half _Smoothness;
     half4 _DirtColor;
@@ -28,6 +30,8 @@ TEXTURE2D(_BaseMap);
 SAMPLER(sampler_BaseMap);
 TEXTURE2D(_NormalMap);
 SAMPLER(sampler_NormalMap);
+TEXTURE2D(_DetailMap);
+SAMPLER(sampler_DetailMap);
 TEXTURE2D(_MaskMap);
 SAMPLER(sampler_MaskMap);
 TEXTURE2D(_WeatherMap);

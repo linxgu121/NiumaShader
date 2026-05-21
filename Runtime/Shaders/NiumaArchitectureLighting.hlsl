@@ -11,6 +11,7 @@ struct NiumaArchitectureSurfaceData
     half3 normalWS;
     half occlusion;
     half smoothness;
+    half detailMask;
     half edgeWear;
     half dirtMask;
     half mossMask;

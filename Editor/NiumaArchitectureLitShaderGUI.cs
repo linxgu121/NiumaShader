@@ -5,7 +5,7 @@ namespace NiumaShader.Editor
 {
     /// <summary>
     /// Niuma 古建筑 Shader 的材质面板。
-    /// 第三阶段负责分组展示基础光照、法线、MaskMap 和旧化参数，避免美术成员在默认 Inspector 中误填贴图通道。
+    /// 2.0-A 阶段负责分组展示基础光照、法线、DetailMap、MaskMap 和旧化参数，避免美术成员在默认 Inspector 中误填贴图通道。
     /// </summary>
     public sealed class NiumaArchitectureLitShaderGUI : ShaderGUI
     {
@@ -30,7 +30,8 @@ namespace NiumaShader.Editor
             "Moss 苔痕",
             "PaintFade 彩绘褪色",
             "Rain 雨痕",
-            "VertexColor 顶点色"
+            "VertexColor 顶点色",
+            "Detail 细节遮罩"
         };
 
         private static readonly GUIContent SurfaceTypeLabel = new GUIContent("材质模板分类", "只用于编辑器分类和模板默认值，不参与 Fragment 动态分支。");
@@ -38,6 +39,8 @@ namespace NiumaShader.Editor
         private static readonly GUIContent BaseColorLabel = new GUIContent("基础颜色乘色", "用于整体微调，不建议用它替代贴图本身的颜色设计。");
         private static readonly GUIContent NormalMapLabel = new GUIContent("法线贴图", "仅支持 Tangent Space NormalMap。模型导入时必须包含 Tangent / Binormal。");
         private static readonly GUIContent NormalScaleLabel = new GUIContent("法线强度", "木纹、石材、青瓦可适当增强；彩绘表面不建议过强。");
+        private static readonly GUIContent DetailMapLabel = new GUIContent("细节颜色贴图", "2.0-A 功能。RGB=细节颜色乘算，A=混合遮罩，0.5 灰为中性。");
+        private static readonly GUIContent DetailStrengthLabel = new GUIContent("细节强度", "控制 DetailMap.A 的混合强度。用于近景瓦粒、木纹、灰墙颗粒，不承担旧化污渍语义。");
         private static readonly GUIContent MaskMapLabel = new GUIContent("Niuma 遮罩贴图", "通道：R=AO，G=Smoothness，B=EdgeWear/Damage，A=Reserved。不可直接使用 URP Lit MaskMap。");
         private static readonly GUIContent OcclusionStrengthLabel = new GUIContent("AO 强度", "控制 MaskMap.R 对间接光的遮蔽强度。");
         private static readonly GUIContent SmoothnessLabel = new GUIContent("整体光滑度", "与 MaskMap.G 相乘得到最终光滑度；青瓦可略高，灰墙和石材应较低。");
@@ -53,7 +56,7 @@ namespace NiumaShader.Editor
         private static readonly GUIContent EdgeWearColorLabel = new GUIContent("边缘磨损颜色", "用于石阶、木梁、瓦片边缘的磨损露底色。");
         private static readonly GUIContent EdgeWearStrengthLabel = new GUIContent("边缘磨损强度", "与 MaskMap.B 相乘。");
         private static readonly GUIContent VertexWeatherStrengthLabel = new GUIContent("顶点色旧化加成", "0 表示忽略顶点色；R 加强灰尘/褪色，G 加强苔痕，B 加强边缘磨损。");
-        private static readonly GUIContent DebugViewLabel = new GUIContent("调试视图", "用于检查基础色、法线、AO、光滑度、旧化遮罩和顶点色。");
+        private static readonly GUIContent DebugViewLabel = new GUIContent("调试视图", "用于检查基础色、法线、AO、光滑度、旧化遮罩、顶点色和 DetailMap。");
 
         public override void OnGUI(MaterialEditor materialEditor, MaterialProperty[] properties)
         {
@@ -67,6 +70,8 @@ namespace NiumaShader.Editor
             var baseColor = FindProperty("_BaseColor", properties, false);
             var normalMap = FindProperty("_NormalMap", properties, false);
             var normalScale = FindProperty("_NormalScale", properties, false);
+            var detailMap = FindProperty("_DetailMap", properties, false);
+            var detailStrength = FindProperty("_DetailStrength", properties, false);
             var maskMap = FindProperty("_MaskMap", properties, false);
             var occlusionStrength = FindProperty("_OcclusionStrength", properties, false);
             var smoothness = FindProperty("_Smoothness", properties, false);
@@ -85,13 +90,14 @@ namespace NiumaShader.Editor
             var debugView = FindProperty("_DebugView", properties, false);
 
             EditorGUILayout.Space(4f);
-            EditorGUILayout.HelpBox("Niuma 建筑 Shader 第三阶段：已接入 WeatherMap 灰尘、苔痕、彩绘褪色、雨痕，以及顶点色旧化加成。", MessageType.Info);
+            EditorGUILayout.HelpBox("Niuma 建筑 Shader 2.0-A：已接入 DetailMap，用于瓦片、木纹、灰墙和石阶的近景微观细节。", MessageType.Info);
             EditorGUILayout.HelpBox("警告：Niuma MaskMap 与 URP Lit MaskMap 通道不同，不可直接混用。", MessageType.Warning);
             EditorGUILayout.HelpBox("_SurfaceType 只用于材质模板分类，不允许在 Fragment Shader 中做材质类型动态分支。", MessageType.None);
 
             DrawTemplateSection(materialEditor, surfaceType);
             DrawBaseSection(materialEditor, baseMap, baseColor);
             DrawNormalSection(materialEditor, normalMap, normalScale);
+            DrawDetailSection(materialEditor, detailMap, detailStrength);
             DrawMaskSection(materialEditor, maskMap, occlusionStrength, smoothness);
             DrawWeatheringSection(
                 materialEditor,
@@ -158,6 +164,26 @@ namespace NiumaShader.Editor
                 {
                     materialEditor.TexturePropertySingleLine(NormalMapLabel, normalMap);
                 }
+            }
+        }
+
+        private static void DrawDetailSection(MaterialEditor materialEditor, MaterialProperty detailMap, MaterialProperty detailStrength)
+        {
+            EditorGUILayout.Space(6f);
+            EditorGUILayout.LabelField("细节贴图 2.0", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox("DetailMap：RGB=细节颜色乘算，A=细节遮罩。0.5 灰为中性，适合近景瓦粒、木纹和墙面颗粒。", MessageType.Info);
+            if (detailMap != null)
+            {
+                if (detailStrength != null)
+                {
+                    materialEditor.TexturePropertySingleLine(DetailMapLabel, detailMap, detailStrength);
+                }
+                else
+                {
+                    materialEditor.TexturePropertySingleLine(DetailMapLabel, detailMap);
+                }
+
+                materialEditor.TextureScaleOffsetProperty(detailMap);
             }
         }
 
@@ -261,6 +287,7 @@ namespace NiumaShader.Editor
 
                 SetKeyword(material, "_NIUMA_NORMALMAP", material.GetTexture("_NormalMap") != null);
                 SetKeyword(material, "_NIUMA_WEATHERING", material.GetTexture("_WeatherMap") != null);
+                SetKeyword(material, "_NIUMA_DETAILMAP", material.GetTexture("_DetailMap") != null);
             }
         }
 

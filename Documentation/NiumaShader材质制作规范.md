@@ -4,7 +4,7 @@
 
 ## 当前阶段
 
-当前已进入第六阶段，验证内容包括：
+当前已进入 2.0-A 阶段，验证内容包括：
 
 - `Niuma/Architecture/Lit` 能在 URP 下正常显示
 - `BaseMap × BaseColor` 输出正确
@@ -26,13 +26,17 @@
 - 模板材质默认开启 GPU Instancing，方便重复瓦片、斗拱、栏杆等构件直接复用
 - Editor 菜单可执行性能冻结检查，确认 Pass、CBUFFER、Instancing、DOTS、Variant 预算和 Additional Lights 策略没有被破坏
 - Editor 菜单可生成 Instancing 压力测试场景，用于验证重复瓦片等构件的批处理预留
+- 2.0 版本开始加入 DetailMap、Parallax、各向异性高光、自发光 / 灯笼四类增强能力
+- 2.0-A 阶段先实现 DetailMap，用于解决瓦片、木纹、灰墙、石阶近景细节发糊
 - `.meta` 文件由 Unity 自动生成
 
-第六阶段暂不包含：
+2.0-A 阶段暂不包含：
 
-- DetailMap
 - Additional Lights
 - 自定义 RenderFeature / RenderGraph Pass
+- Parallax 视差映射
+- 各向异性高光
+- 自发光 / 灯笼
 
 ## 美术验证工具
 
@@ -56,6 +60,7 @@ Assets/Game/Moudle/NiumaShader/Runtime/Materials
 
 Assets/Game/Moudle/NiumaShader/Runtime/Textures/Test
   T_Niuma_Validation_Mask.png
+  T_Niuma_Validation_Detail.png
   T_Niuma_Validation_Weather.png
 
 Assets/Game/Moudle/NiumaShader/Runtime/TestScenes
@@ -76,6 +81,39 @@ Assets/Game/Moudle/NiumaShader/Runtime/TestScenes
 5. 点击 `Niuma/Shader/执行性能冻结检查`，确认 Console 中没有 Error
 6. 点击 `Niuma/Shader/生成 Instancing 压力测试场景`，打开生成的场景检查 10×10 青瓦重复件是否正常显示
 
+## 2.0 版本增强能力
+
+2.0 版本计划加入：
+
+```text
+DetailMap              瓦片、木纹、灰墙、石阶的微观颜色细节
+Parallax               砖缝、瓦沟、雕刻浅槽的视差深度感
+Anisotropic Highlight  漆面、丝绸、湿润瓦片的方向性高光
+Emission / Lantern     灯笼、窗纸、夜景建筑暖光
+```
+
+2.0-A 当前只实现 DetailMap。其余三项进入后续阶段，避免一次增加过多采样和 Keyword。
+
+DetailMap 通道约定：
+
+```text
+RGB = 细节颜色乘算，0.5 为中性
+A   = 细节混合遮罩
+```
+
+混合顺序：
+
+```text
+BaseColor -> Detail -> EdgeWear -> Dirt -> Moss -> PaintFade -> RainStreak -> Lighting
+```
+
+材质制作建议：
+
+- 青瓦 DetailMap 可以使用细碎颗粒和轻微色差
+- 木梁 DetailMap 可以使用细木纹和漆面微裂
+- 灰墙 DetailMap 可以使用石灰颗粒，但不要画成强污渍，污渍仍交给 WeatherMap
+- DetailMap 默认应接近 0.5 灰，避免整体颜色被过度压暗或提亮
+
 ## 性能冻结检查
 
 第六阶段新增 `NiumaArchitecturePerformanceValidator`，用于把容易被后续修改破坏的性能约束固定下来。
@@ -89,7 +127,7 @@ ForwardLit / ShadowCaster / DepthOnly / DepthNormals 是否完整
 每个 Pass 是否保留 multi_compile_instancing
 每个 Pass 是否保留 DOTS include 预留
 是否误开启 _ADDITIONAL_LIGHTS / _ADDITIONAL_LIGHT_SHADOWS pragma
-shader_feature_local 理论 Variant 是否控制在 32 个以内
+shader_feature_local 理论 Variant 是否控制在 64 个以内
 四套模板材质是否存在、Shader 是否正确、是否开启 GPU Instancing
 ```
 
@@ -99,6 +137,7 @@ shader_feature_local 理论 Variant 是否控制在 32 个以内
 - 如果检查出现 Error，优先修复 Shader 结构，不要先调材质参数
 - Warning 可以进入下一步验证，但需要在提交说明中写明原因
 - `NiumaShader_Instancing_Test.unity` 只用于性能与批处理预留验证，不作为正式场景资产
+- 2.0 版本 Variant 预算上限提升到 64；新增 Keyword 必须通过性能冻结检查
 
 ## 渲染 Pass
 

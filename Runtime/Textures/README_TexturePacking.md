@@ -56,7 +56,7 @@ A = 雨痕 / 预留
 旧化混合顺序：
 
 ```text
-BaseColor -> EdgeWear -> Dirt -> Moss -> PaintFade -> RainStreak -> Lighting
+BaseColor -> Detail -> EdgeWear -> Dirt -> Moss -> PaintFade -> RainStreak -> Lighting
 ```
 
 注意：边缘磨损来自 MaskMap.B，不来自 WeatherMap。
@@ -76,9 +76,15 @@ A = 预留
 
 ## DetailMap
 
-第一版 DetailMap 是细节颜色 / 细节噪声，不是 Detail Normal。
+2.0-A 阶段 DetailMap 是细节颜色 / 细节噪声，不是 Detail Normal。
 
 ```text
-RGB = 细节颜色乘算或细节噪声
+RGB = 细节颜色乘算。0.5 为中性，低于 0.5 压暗，高于 0.5 提亮
 A   = 细节混合遮罩
 ```
+
+使用建议：
+
+- 青瓦、木纹、灰墙、石阶近景材质优先使用
+- 不要把灰尘、苔痕、雨痕画进 DetailMap，这些仍交给 WeatherMap
+- DetailMap 可以提高 Tiling，但不要用它替代 BaseMap 的主体纹样

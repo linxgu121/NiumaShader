@@ -71,6 +71,12 @@ bool NiumaTryGetDebugColor(half debugView, NiumaArchitectureSurfaceData surface,
         return true;
     }
 
+    if (debugView < 11.5)
+    {
+        color.rgb = half3(surface.detailMask, surface.detailMask, surface.detailMask);
+        return true;
+    }
+
     return false;
 }
 

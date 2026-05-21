@@ -13,6 +13,10 @@ Shader "Niuma/Architecture/Lit"
         [Normal] _NormalMap ("法线贴图", 2D) = "bump" {}
         [Range(0, 2)] _NormalScale ("法线强度", Float) = 1
 
+        [Header(Detail)]
+        _DetailMap ("细节颜色贴图", 2D) = "gray" {}
+        [Range(0, 1)] _DetailStrength ("细节强度", Float) = 0.35
+
         [Header(Niuma MaskMap)]
         _MaskMap ("Niuma 遮罩贴图", 2D) = "white" {}
         [Range(0, 1)] _OcclusionStrength ("AO 强度", Float) = 1
@@ -33,7 +37,7 @@ Shader "Niuma/Architecture/Lit"
         [Range(0, 1)] _VertexWeatherStrength ("顶点色旧化加成", Float) = 0
 
         [Header(Debug)]
-        [Enum(Final,0,BaseColor,1,Normal,2,AO,3,Smoothness,4,EdgeWear,5,Dirt,6,Moss,7,PaintFade,8,Rain,9,VertexColor,10)] _DebugView ("调试视图", Float) = 0
+        [Enum(Final,0,BaseColor,1,Normal,2,AO,3,Smoothness,4,EdgeWear,5,Dirt,6,Moss,7,PaintFade,8,Rain,9,VertexColor,10,Detail,11)] _DebugView ("调试视图", Float) = 0
     }
 
     SubShader
@@ -61,6 +65,7 @@ Shader "Niuma/Architecture/Lit"
             #pragma fragment NiumaArchitectureFragment
             #pragma shader_feature_local _NIUMA_NORMALMAP
             #pragma shader_feature_local _NIUMA_WEATHERING
+            #pragma shader_feature_local _NIUMA_DETAILMAP
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
             #pragma multi_compile_fragment _ _SHADOWS_SOFT
             #pragma multi_compile_fragment _ _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH
