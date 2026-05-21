@@ -5,7 +5,7 @@ namespace NiumaShader.Editor
 {
     /// <summary>
     /// Niuma 古建筑 Shader 的材质面板。
-    /// 2.0-A 阶段负责分组展示基础光照、法线、DetailMap、MaskMap 和旧化参数，避免美术成员在默认 Inspector 中误填贴图通道。
+    /// 2.0-C 阶段负责分组展示基础光照、法线、DetailMap、Parallax、各向异性高光、MaskMap 和旧化参数，避免美术成员在默认 Inspector 中误填贴图通道。
     /// </summary>
     public sealed class NiumaArchitectureLitShaderGUI : ShaderGUI
     {
@@ -31,7 +31,8 @@ namespace NiumaShader.Editor
             "PaintFade 彩绘褪色",
             "Rain 雨痕",
             "VertexColor 顶点色",
-            "Detail 细节遮罩"
+            "Detail 细节遮罩",
+            "ParallaxHeight 视差高度"
         };
 
         private static readonly GUIContent SurfaceTypeLabel = new GUIContent("材质模板分类", "只用于编辑器分类和模板默认值，不参与 Fragment 动态分支。");
@@ -41,6 +42,12 @@ namespace NiumaShader.Editor
         private static readonly GUIContent NormalScaleLabel = new GUIContent("法线强度", "木纹、石材、青瓦可适当增强；彩绘表面不建议过强。");
         private static readonly GUIContent DetailMapLabel = new GUIContent("细节颜色贴图", "2.0-A 功能。RGB=细节颜色乘算，A=混合遮罩，0.5 灰为中性。");
         private static readonly GUIContent DetailStrengthLabel = new GUIContent("细节强度", "控制 DetailMap.A 的混合强度。用于近景瓦粒、木纹、灰墙颗粒，不承担旧化污渍语义。");
+        private static readonly GUIContent HeightMapLabel = new GUIContent("高度贴图", "2.0-B 功能。R=高度，黑色低、白色高，用于砖缝、瓦沟、石雕浅槽的视差深度。");
+        private static readonly GUIContent ParallaxStrengthLabel = new GUIContent("视差强度", "单步 Offset Mapping 强度。建议 0.01~0.035，过大会出现贴图游泳或边缘拉伸。");
+        private static readonly GUIContent ParallaxCenterLabel = new GUIContent("高度中心", "默认 0.5。低于中心向内凹，高于中心向外凸，用于控制 HeightMap 的中性高度。");
+        private static readonly GUIContent AnisotropyStrengthLabel = new GUIContent("各向异性高光强度", "2.0-C 功能。用于漆面木梁、湿润青瓦、丝绸装饰附近材质的方向性拉丝高光。");
+        private static readonly GUIContent AnisotropyDirectionLabel = new GUIContent("高光方向混合", "0 沿模型 Tangent，1 沿模型 Bitangent。模型 Tangent 不稳定时方向会错误。");
+        private static readonly GUIContent AnisotropyColorLabel = new GUIContent("各向异性高光颜色", "方向性高光的颜色。漆面可偏暖，湿瓦可偏冷灰。");
         private static readonly GUIContent MaskMapLabel = new GUIContent("Niuma 遮罩贴图", "通道：R=AO，G=Smoothness，B=EdgeWear/Damage，A=Reserved。不可直接使用 URP Lit MaskMap。");
         private static readonly GUIContent OcclusionStrengthLabel = new GUIContent("AO 强度", "控制 MaskMap.R 对间接光的遮蔽强度。");
         private static readonly GUIContent SmoothnessLabel = new GUIContent("整体光滑度", "与 MaskMap.G 相乘得到最终光滑度；青瓦可略高，灰墙和石材应较低。");
@@ -56,7 +63,7 @@ namespace NiumaShader.Editor
         private static readonly GUIContent EdgeWearColorLabel = new GUIContent("边缘磨损颜色", "用于石阶、木梁、瓦片边缘的磨损露底色。");
         private static readonly GUIContent EdgeWearStrengthLabel = new GUIContent("边缘磨损强度", "与 MaskMap.B 相乘。");
         private static readonly GUIContent VertexWeatherStrengthLabel = new GUIContent("顶点色旧化加成", "0 表示忽略顶点色；R 加强灰尘/褪色，G 加强苔痕，B 加强边缘磨损。");
-        private static readonly GUIContent DebugViewLabel = new GUIContent("调试视图", "用于检查基础色、法线、AO、光滑度、旧化遮罩、顶点色和 DetailMap。");
+        private static readonly GUIContent DebugViewLabel = new GUIContent("调试视图", "用于检查基础色、法线、AO、光滑度、旧化遮罩、顶点色、DetailMap 和视差高度。各向异性效果请在 Final 下旋转视角观察。");
 
         public override void OnGUI(MaterialEditor materialEditor, MaterialProperty[] properties)
         {
@@ -72,6 +79,12 @@ namespace NiumaShader.Editor
             var normalScale = FindProperty("_NormalScale", properties, false);
             var detailMap = FindProperty("_DetailMap", properties, false);
             var detailStrength = FindProperty("_DetailStrength", properties, false);
+            var heightMap = FindProperty("_HeightMap", properties, false);
+            var parallaxStrength = FindProperty("_ParallaxStrength", properties, false);
+            var parallaxCenter = FindProperty("_ParallaxCenter", properties, false);
+            var anisotropyStrength = FindProperty("_AnisotropyStrength", properties, false);
+            var anisotropyDirection = FindProperty("_AnisotropyDirection", properties, false);
+            var anisotropyColor = FindProperty("_AnisotropyColor", properties, false);
             var maskMap = FindProperty("_MaskMap", properties, false);
             var occlusionStrength = FindProperty("_OcclusionStrength", properties, false);
             var smoothness = FindProperty("_Smoothness", properties, false);
@@ -90,7 +103,7 @@ namespace NiumaShader.Editor
             var debugView = FindProperty("_DebugView", properties, false);
 
             EditorGUILayout.Space(4f);
-            EditorGUILayout.HelpBox("Niuma 建筑 Shader 2.0-A：已接入 DetailMap，用于瓦片、木纹、灰墙和石阶的近景微观细节。", MessageType.Info);
+            EditorGUILayout.HelpBox("Niuma 建筑 Shader 2.0-C：已接入各向异性高光，用于漆面、湿瓦和丝绸相关材质的方向性反光。", MessageType.Info);
             EditorGUILayout.HelpBox("警告：Niuma MaskMap 与 URP Lit MaskMap 通道不同，不可直接混用。", MessageType.Warning);
             EditorGUILayout.HelpBox("_SurfaceType 只用于材质模板分类，不允许在 Fragment Shader 中做材质类型动态分支。", MessageType.None);
 
@@ -98,6 +111,8 @@ namespace NiumaShader.Editor
             DrawBaseSection(materialEditor, baseMap, baseColor);
             DrawNormalSection(materialEditor, normalMap, normalScale);
             DrawDetailSection(materialEditor, detailMap, detailStrength);
+            DrawParallaxSection(materialEditor, heightMap, parallaxStrength, parallaxCenter);
+            DrawAnisotropySection(materialEditor, anisotropyStrength, anisotropyDirection, anisotropyColor);
             DrawMaskSection(materialEditor, maskMap, occlusionStrength, smoothness);
             DrawWeatheringSection(
                 materialEditor,
@@ -185,6 +200,46 @@ namespace NiumaShader.Editor
 
                 materialEditor.TextureScaleOffsetProperty(detailMap);
             }
+        }
+
+        private static void DrawParallaxSection(
+            MaterialEditor materialEditor,
+            MaterialProperty heightMap,
+            MaterialProperty parallaxStrength,
+            MaterialProperty parallaxCenter)
+        {
+            EditorGUILayout.Space(6f);
+            EditorGUILayout.LabelField("视差映射 2.0-B", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox("Parallax 只移动采样 UV，不改变模型轮廓、阴影轮廓和真实碰撞。需要模型有稳定 Tangent。", MessageType.Info);
+            if (heightMap != null)
+            {
+                if (parallaxStrength != null)
+                {
+                    materialEditor.TexturePropertySingleLine(HeightMapLabel, heightMap, parallaxStrength);
+                }
+                else
+                {
+                    materialEditor.TexturePropertySingleLine(HeightMapLabel, heightMap);
+                }
+
+                materialEditor.TextureScaleOffsetProperty(heightMap);
+            }
+
+            DrawProperty(materialEditor, parallaxCenter, ParallaxCenterLabel);
+        }
+
+        private static void DrawAnisotropySection(
+            MaterialEditor materialEditor,
+            MaterialProperty anisotropyStrength,
+            MaterialProperty anisotropyDirection,
+            MaterialProperty anisotropyColor)
+        {
+            EditorGUILayout.Space(6f);
+            EditorGUILayout.LabelField("各向异性高光 2.0-C", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox("各向异性高光依赖模型 Tangent。适合漆面、湿瓦、丝绸装饰等少量材质，不建议给灰墙和普通石材默认开启。", MessageType.Info);
+            DrawProperty(materialEditor, anisotropyStrength, AnisotropyStrengthLabel);
+            DrawProperty(materialEditor, anisotropyDirection, AnisotropyDirectionLabel);
+            DrawProperty(materialEditor, anisotropyColor, AnisotropyColorLabel);
         }
 
         private static void DrawMaskSection(MaterialEditor materialEditor, MaterialProperty maskMap, MaterialProperty occlusionStrength, MaterialProperty smoothness)
@@ -288,6 +343,15 @@ namespace NiumaShader.Editor
                 SetKeyword(material, "_NIUMA_NORMALMAP", material.GetTexture("_NormalMap") != null);
                 SetKeyword(material, "_NIUMA_WEATHERING", material.GetTexture("_WeatherMap") != null);
                 SetKeyword(material, "_NIUMA_DETAILMAP", material.GetTexture("_DetailMap") != null);
+                var parallaxEnabled = material.HasProperty("_HeightMap")
+                                      && material.GetTexture("_HeightMap") != null
+                                      && material.HasProperty("_ParallaxStrength")
+                                      && material.GetFloat("_ParallaxStrength") > 0f;
+                SetKeyword(material, "_NIUMA_PARALLAX", parallaxEnabled);
+
+                var anisotropyEnabled = material.HasProperty("_AnisotropyStrength")
+                                        && material.GetFloat("_AnisotropyStrength") > 0f;
+                SetKeyword(material, "_NIUMA_ANISOTROPY", anisotropyEnabled);
             }
         }
 

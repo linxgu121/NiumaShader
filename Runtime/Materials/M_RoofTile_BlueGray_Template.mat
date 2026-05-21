@@ -13,6 +13,7 @@ Material:
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
   - _NIUMA_DETAILMAP
+  - _NIUMA_PARALLAX
   - _NIUMA_WEATHERING
   m_InvalidKeywords: []
   m_LightmapFlags: 4
@@ -31,6 +32,10 @@ Material:
         m_Offset: {x: 0, y: 0}
     - _DetailMap:
         m_Texture: {fileID: 2800000, guid: 2a6fb0e2d24b7314c8c6b9f6bf1cafb8, type: 3}
+        m_Scale: {x: 4, y: 4}
+        m_Offset: {x: 0, y: 0}
+    - _HeightMap:
+        m_Texture: {fileID: 2800000, guid: 0a172816f348f384f8bbab8abe616ed9, type: 3}
         m_Scale: {x: 4, y: 4}
         m_Offset: {x: 0, y: 0}
     - _MaskMap:
@@ -56,6 +61,8 @@ Material:
     - _OcclusionStrength: 1
     - _PaintAgeStrength: 0.28
     - _PaintFadeSaturation: 0.45
+    - _ParallaxCenter: 0.5
+    - _ParallaxStrength: 0.022
     - _RainStreakStrength: 0.22
     - _Smoothness: 0.48
     - _SurfaceType: 1
@@ -63,8 +70,8 @@ Material:
     - _WeatherStrength: 0.7
     m_Colors:
     - _BaseColor: {r: 0.28, g: 0.36, b: 0.4, a: 1}
-    - _DirtColor: {r: 0.54999995, g: 0.5, b: 0.41999996, a: 1}
+    - _DirtColor: {r: 0.35246563, g: 0.28691784, b: 0.1722091, a: 1}
     - _EdgeWearColor: {r: 0.55, g: 0.6, b: 0.58, a: 1}
-    - _MossColor: {r: 0.29999998, g: 0.41999996, b: 0.21999997, a: 1}
+    - _MossColor: {r: 0.045563236, g: 0.07087374, b: 0.029233877, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

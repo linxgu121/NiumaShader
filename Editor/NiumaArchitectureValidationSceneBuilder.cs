@@ -7,7 +7,7 @@ using UnityEngine.SceneManagement;
 namespace NiumaShader.Editor
 {
     /// <summary>
-    /// 2.0-A 美术验证工具。
+    /// 2.0-C 美术验证工具。
     /// 通过菜单生成测试材质、测试贴图和测试场景，避免手写 .mat / .unity 文件造成序列化差异。
     /// </summary>
     public static class NiumaArchitectureValidationSceneBuilder
@@ -20,6 +20,7 @@ namespace NiumaShader.Editor
         private const string TestScenePath = TestScenesFolder + "/NiumaShader_Architecture_Test.unity";
         private const string MaskTexturePath = TestTexturesFolder + "/T_Niuma_Validation_Mask.png";
         private const string DetailTexturePath = TestTexturesFolder + "/T_Niuma_Validation_Detail.png";
+        private const string HeightTexturePath = TestTexturesFolder + "/T_Niuma_Validation_Height.png";
         private const string WeatherTexturePath = TestTexturesFolder + "/T_Niuma_Validation_Weather.png";
         private const int ValidationTextureSize = 256;
 
@@ -44,6 +45,7 @@ namespace NiumaShader.Editor
 
             var maskTexture = CreateOrLoadMaskTexture();
             var detailTexture = CreateOrLoadDetailTexture();
+            var heightTexture = CreateOrLoadHeightTexture();
             var weatherTexture = CreateOrLoadWeatherTexture();
 
             var wood = CreateOrUpdateTemplateMaterial(
@@ -55,8 +57,12 @@ namespace NiumaShader.Editor
                 0.55f,
                 new Color(0.66f, 0.51f, 0.36f, 1f),
                 0.35f,
+                0.22f,
+                0.0f,
+                new Color(1.0f, 0.82f, 0.56f, 1f),
                 maskTexture,
                 detailTexture,
+                heightTexture,
                 weatherTexture);
 
             var roofTile = CreateOrUpdateTemplateMaterial(
@@ -68,8 +74,12 @@ namespace NiumaShader.Editor
                 0.70f,
                 new Color(0.55f, 0.60f, 0.58f, 1f),
                 0.28f,
+                0.32f,
+                0.35f,
+                new Color(0.72f, 0.82f, 0.92f, 1f),
                 maskTexture,
                 detailTexture,
+                heightTexture,
                 weatherTexture);
 
             var stone = CreateOrUpdateTemplateMaterial(
@@ -81,8 +91,12 @@ namespace NiumaShader.Editor
                 0.80f,
                 new Color(0.72f, 0.68f, 0.60f, 1f),
                 0.55f,
+                0.0f,
+                0.0f,
+                Color.white,
                 maskTexture,
                 detailTexture,
+                heightTexture,
                 weatherTexture);
 
             var wall = CreateOrUpdateTemplateMaterial(
@@ -94,8 +108,12 @@ namespace NiumaShader.Editor
                 0.60f,
                 new Color(0.86f, 0.82f, 0.72f, 1f),
                 0.12f,
+                0.0f,
+                0.0f,
+                Color.white,
                 maskTexture,
                 detailTexture,
+                heightTexture,
                 weatherTexture);
 
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
@@ -131,12 +149,13 @@ namespace NiumaShader.Editor
 
             var maskTexture = CreateOrLoadMaskTexture();
             var detailTexture = CreateOrLoadDetailTexture();
+            var heightTexture = CreateOrLoadHeightTexture();
             var weatherTexture = CreateOrLoadWeatherTexture();
 
-            CreateOrUpdateTemplateMaterial(shader, "M_Wood_Painted_Template", 0, new Color(0.56f, 0.22f, 0.14f, 1f), 0.32f, 0.55f, new Color(0.66f, 0.51f, 0.36f, 1f), 0.35f, maskTexture, detailTexture, weatherTexture);
-            CreateOrUpdateTemplateMaterial(shader, "M_RoofTile_BlueGray_Template", 1, new Color(0.28f, 0.36f, 0.40f, 1f), 0.48f, 0.70f, new Color(0.55f, 0.60f, 0.58f, 1f), 0.28f, maskTexture, detailTexture, weatherTexture);
-            CreateOrUpdateTemplateMaterial(shader, "M_Stone_Step_Template", 2, new Color(0.48f, 0.46f, 0.41f, 1f), 0.22f, 0.80f, new Color(0.72f, 0.68f, 0.60f, 1f), 0.55f, maskTexture, detailTexture, weatherTexture);
-            CreateOrUpdateTemplateMaterial(shader, "M_Wall_Lime_Template", 3, new Color(0.78f, 0.74f, 0.66f, 1f), 0.14f, 0.60f, new Color(0.86f, 0.82f, 0.72f, 1f), 0.12f, maskTexture, detailTexture, weatherTexture);
+            CreateOrUpdateTemplateMaterial(shader, "M_Wood_Painted_Template", 0, new Color(0.56f, 0.22f, 0.14f, 1f), 0.32f, 0.55f, new Color(0.66f, 0.51f, 0.36f, 1f), 0.35f, 0.22f, 0.0f, new Color(1.0f, 0.82f, 0.56f, 1f), maskTexture, detailTexture, heightTexture, weatherTexture);
+            CreateOrUpdateTemplateMaterial(shader, "M_RoofTile_BlueGray_Template", 1, new Color(0.28f, 0.36f, 0.40f, 1f), 0.48f, 0.70f, new Color(0.55f, 0.60f, 0.58f, 1f), 0.28f, 0.32f, 0.35f, new Color(0.72f, 0.82f, 0.92f, 1f), maskTexture, detailTexture, heightTexture, weatherTexture);
+            CreateOrUpdateTemplateMaterial(shader, "M_Stone_Step_Template", 2, new Color(0.48f, 0.46f, 0.41f, 1f), 0.22f, 0.80f, new Color(0.72f, 0.68f, 0.60f, 1f), 0.55f, 0.0f, 0.0f, Color.white, maskTexture, detailTexture, heightTexture, weatherTexture);
+            CreateOrUpdateTemplateMaterial(shader, "M_Wall_Lime_Template", 3, new Color(0.78f, 0.74f, 0.66f, 1f), 0.14f, 0.60f, new Color(0.86f, 0.82f, 0.72f, 1f), 0.12f, 0.0f, 0.0f, Color.white, maskTexture, detailTexture, heightTexture, weatherTexture);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -152,8 +171,12 @@ namespace NiumaShader.Editor
             float weatherStrength,
             Color edgeWearColor,
             float edgeWearStrength,
+            float anisotropyStrength,
+            float anisotropyDirection,
+            Color anisotropyColor,
             Texture2D maskTexture,
             Texture2D detailTexture,
+            Texture2D heightTexture,
             Texture2D weatherTexture)
         {
             var materialPath = MaterialsFolder + "/" + materialName + ".mat";
@@ -169,9 +192,16 @@ namespace NiumaShader.Editor
             SetColor(material, "_BaseColor", baseColor);
             SetTexture(material, "_MaskMap", maskTexture);
             SetTexture(material, "_DetailMap", detailTexture);
+            SetTexture(material, "_HeightMap", heightTexture);
             SetTexture(material, "_WeatherMap", weatherTexture);
             SetFloat(material, "_DetailStrength", 0.42f);
             SetTextureScale(material, "_DetailMap", new Vector2(4f, 4f));
+            SetFloat(material, "_ParallaxStrength", 0.022f);
+            SetFloat(material, "_ParallaxCenter", 0.5f);
+            SetTextureScale(material, "_HeightMap", new Vector2(4f, 4f));
+            SetFloat(material, "_AnisotropyStrength", anisotropyStrength);
+            SetFloat(material, "_AnisotropyDirection", anisotropyDirection);
+            SetColor(material, "_AnisotropyColor", anisotropyColor);
             SetFloat(material, "_Smoothness", smoothness);
             SetFloat(material, "_WeatherStrength", weatherStrength);
             SetFloat(material, "_DirtStrength", 0.45f);
@@ -184,7 +214,16 @@ namespace NiumaShader.Editor
             SetFloat(material, "_VertexWeatherStrength", 0.35f);
             material.enableInstancing = true;
             material.EnableKeyword("_NIUMA_DETAILMAP");
+            material.EnableKeyword("_NIUMA_PARALLAX");
             material.EnableKeyword("_NIUMA_WEATHERING");
+            if (anisotropyStrength > 0f)
+            {
+                material.EnableKeyword("_NIUMA_ANISOTROPY");
+            }
+            else
+            {
+                material.DisableKeyword("_NIUMA_ANISOTROPY");
+            }
             EditorUtility.SetDirty(material);
             return material;
         }
@@ -274,6 +313,37 @@ namespace NiumaShader.Editor
             texture.Apply();
             SaveTextureAsset(texture, DetailTexturePath, false);
             return AssetDatabase.LoadAssetAtPath<Texture2D>(DetailTexturePath);
+        }
+
+        private static Texture2D CreateOrLoadHeightTexture()
+        {
+            var existing = AssetDatabase.LoadAssetAtPath<Texture2D>(HeightTexturePath);
+            if (existing != null && existing.width == ValidationTextureSize && existing.height == ValidationTextureSize)
+            {
+                return existing;
+            }
+
+            var texture = new Texture2D(ValidationTextureSize, ValidationTextureSize, TextureFormat.RGBA32, false, true);
+            var maxIndex = ValidationTextureSize - 1f;
+            for (var y = 0; y < texture.height; y++)
+            {
+                for (var x = 0; x < texture.width; x++)
+                {
+                    var u = x / maxIndex;
+                    var v = y / maxIndex;
+                    var grooveX = Mathf.Abs(Mathf.Sin(u * Mathf.PI * 8.0f));
+                    var grooveY = Mathf.Abs(Mathf.Sin(v * Mathf.PI * 5.0f));
+                    var groove = Mathf.Min(grooveX, grooveY);
+                    var tileRidge = Mathf.SmoothStep(0.18f, 1.0f, groove);
+                    var shallowChisel = Mathf.Sin((u + v) * Mathf.PI * 18.0f) * 0.04f;
+                    var height = Mathf.Clamp01(0.28f + tileRidge * 0.52f + shallowChisel);
+                    texture.SetPixel(x, y, new Color(height, height, height, 1f));
+                }
+            }
+
+            texture.Apply();
+            SaveTextureAsset(texture, HeightTexturePath, false);
+            return AssetDatabase.LoadAssetAtPath<Texture2D>(HeightTexturePath);
         }
 
         private static void SaveTextureAsset(Texture2D texture, string assetPath, bool sRgb)

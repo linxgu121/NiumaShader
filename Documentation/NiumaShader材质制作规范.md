@@ -4,7 +4,7 @@
 
 ## 当前阶段
 
-当前已进入 2.0-A 阶段，验证内容包括：
+当前已进入 2.0-C 阶段，验证内容包括：
 
 - `Niuma/Architecture/Lit` 能在 URP 下正常显示
 - `BaseMap × BaseColor` 输出正确
@@ -22,21 +22,21 @@
 - ShaderGUI 能显示中文分组和 MaskMap 警告
 - Editor 菜单可生成古建 Shader 验证场景
 - Editor 菜单可生成 / 刷新木、瓦、石、墙四套模板材质
-- Editor 菜单可生成 256×256 线性 MaskMap / WeatherMap 测试贴图
+- Editor 菜单可生成 256×256 线性 MaskMap / DetailMap / HeightMap / WeatherMap 测试贴图
 - 模板材质默认开启 GPU Instancing，方便重复瓦片、斗拱、栏杆等构件直接复用
 - Editor 菜单可执行性能冻结检查，确认 Pass、CBUFFER、Instancing、DOTS、Variant 预算和 Additional Lights 策略没有被破坏
 - Editor 菜单可生成 Instancing 压力测试场景，用于验证重复瓦片等构件的批处理预留
 - 2.0 版本开始加入 DetailMap、Parallax、各向异性高光、自发光 / 灯笼四类增强能力
 - 2.0-A 阶段先实现 DetailMap，用于解决瓦片、木纹、灰墙、石阶近景细节发糊
+- 2.0-B 阶段实现 Parallax 视差映射，用于砖缝、瓦沟、石雕浅槽的深度错觉
+- 2.0-C 阶段实现各向异性高光，用于漆面木梁、湿润青瓦、丝绸相关装饰的方向性反光
 - `.meta` 文件由 Unity 自动生成
 
-2.0-A 阶段暂不包含：
+2.0-C 阶段暂不包含：
 
 - Additional Lights
 - 自定义 RenderFeature / RenderGraph Pass
-- Parallax 视差映射
-- 各向异性高光
-- 自发光 / 灯笼
+- 自发光 / 灯笼。该能力已登记为 2.0-D 待做，采用无 Keyword + uniform 分支方案。
 
 ## 美术验证工具
 
@@ -61,6 +61,7 @@ Assets/Game/Moudle/NiumaShader/Runtime/Materials
 Assets/Game/Moudle/NiumaShader/Runtime/Textures/Test
   T_Niuma_Validation_Mask.png
   T_Niuma_Validation_Detail.png
+  T_Niuma_Validation_Height.png
   T_Niuma_Validation_Weather.png
 
 Assets/Game/Moudle/NiumaShader/Runtime/TestScenes
@@ -76,7 +77,7 @@ Assets/Game/Moudle/NiumaShader/Runtime/TestScenes
 
 1. 点击 `Niuma/Shader/生成古建 Shader 测试场景`
 2. 确认 Console 没有 Shader 或 C# 编译错误
-3. 依次切换材质的调试视图：Final、BaseColor、Normal、AO、Smoothness、EdgeWear、Dirt、Moss、PaintFade、Rain、VertexColor
+3. 依次切换材质的调试视图：Final、BaseColor、Normal、AO、Smoothness、EdgeWear、Dirt、Moss、PaintFade、Rain、VertexColor、Detail、ParallaxHeight
 4. 开启场景 Lighting / Shadows，确认 ShadowCaster、DepthOnly、DepthNormals 没有粉材质或异常黑块
 5. 点击 `Niuma/Shader/执行性能冻结检查`，确认 Console 中没有 Error
 6. 点击 `Niuma/Shader/生成 Instancing 压力测试场景`，打开生成的场景检查 10×10 青瓦重复件是否正常显示
@@ -92,7 +93,10 @@ Anisotropic Highlight  漆面、丝绸、湿润瓦片的方向性高光
 Emission / Lantern     灯笼、窗纸、夜景建筑暖光
 ```
 
-2.0-A 当前只实现 DetailMap。其余三项进入后续阶段，避免一次增加过多采样和 Keyword。
+2.0-A 已实现 DetailMap。
+2.0-B 已实现 Parallax 视差映射。
+2.0-C 当前只实现各向异性高光，不进入自发光 / 灯笼。
+2.0-D 待做自发光 / 灯笼，不新增 Keyword，不使用 `_NIUMA_EMISSION`，通过 `_EmissionStrength` 等 uniform 参数控制是否采样和叠加。
 
 DetailMap 通道约定：
 
@@ -114,9 +118,67 @@ BaseColor -> Detail -> EdgeWear -> Dirt -> Moss -> PaintFade -> RainStreak -> Li
 - 灰墙 DetailMap 可以使用石灰颗粒，但不要画成强污渍，污渍仍交给 WeatherMap
 - DetailMap 默认应接近 0.5 灰，避免整体颜色被过度压暗或提亮
 
+Parallax HeightMap 通道约定：
+
+```text
+R = 高度。黑色低、白色高
+GBA = 暂不使用
+```
+
+材质制作建议：
+
+- 砖缝、瓦沟、石雕浅槽适合使用 HeightMap
+- 视差强度建议从 0.01 到 0.035 开始调
+- 高度中心默认 0.5，低于中心表现为凹陷，高于中心表现为凸起
+- Parallax 只改变采样 UV，不改变模型轮廓、阴影轮廓、碰撞和真实深度
+- 远景大面积建筑建议关闭 Parallax，交给法线和贴图表现
+
+各向异性高光参数约定：
+
+```text
+_AnisotropyStrength   各向异性高光强度。0 表示关闭
+_AnisotropyDirection  高光方向混合。0 沿 Tangent，1 沿 Bitangent
+_AnisotropyColor      方向性高光颜色
+```
+
+材质制作建议：
+
+- 漆面木梁可使用偏暖高光
+- 湿润青瓦可使用偏冷灰蓝高光
+- 灰墙、普通石材默认关闭
+- 模型 Tangent 不稳定时不要开启，否则高光方向会乱跳
+- 各向异性只响应主光，不启用 Additional Lights
+
+## 2.0-D 待做：自发光 / 灯笼
+
+2.0-D 只解决材质表面的自发光表现，例如灯笼纸面、夜景窗纸、室内暖光溢出和牌匾金字轻微发光。它不替代真实灯光，不负责照亮周围物体。
+
+贴图约定：
+
+```text
+_EmissionMap
+RGB = 自发光颜色
+A   = 自发光遮罩
+```
+
+参数约定：
+
+```text
+_EmissionColor      自发光颜色
+_EmissionStrength   自发光强度，0 表示关闭
+```
+
+实现约束：
+
+- 不新增 Shader Keyword，不使用 `_NIUMA_EMISSION`
+- 使用 `_EmissionStrength` 作为 uniform 分支条件，强度为 0 时不产生自发光贡献
+- Bloom 只作为后处理配合，用于扩散已经发亮的表面
+- 不影响 ShadowCaster / DepthOnly / DepthNormals
+- 不增加 2.0 Variant 数量，理论 Variant 预算继续保持 64
+
 ## 性能冻结检查
 
-第六阶段新增 `NiumaArchitecturePerformanceValidator`，用于把容易被后续修改破坏的性能约束固定下来。
+`NiumaArchitecturePerformanceValidator` 用于把容易被后续修改破坏的性能约束固定下来。
 
 检查内容：
 
@@ -144,7 +206,7 @@ shader_feature_local 理论 Variant 是否控制在 64 个以内
 当前 Shader 包含：
 
 ```text
-UniversalForward  正式渲染，负责基础光照、法线、MaskMap、WeatherMap
+UniversalForward  正式渲染，负责基础光照、法线、Parallax、MaskMap、DetailMap、WeatherMap
 ShadowCaster      阴影贴图写入，使用 URP Shadow Bias
 DepthOnly         深度预写入，服务深度纹理、遮挡和后处理
 DepthNormals      法线写入，服务 SSAO 和法线相关效果
